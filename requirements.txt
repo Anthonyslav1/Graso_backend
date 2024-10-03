@@ -10,8 +10,10 @@ web3==3.16.1
 aiofiles==0.8.0
 python-dotenv==1.0.0
 requests==2.28.1
-eth-utils==1.10.0
-cytoolz>=0.8.2
-# ethereum-tester==0.1.0-beta.1
+eth-utils==1.10.0  # Keep this version
+cytoolz==0.10.1    # Set cytoolz to a compatible version
 ens==0.6.1
 gunicorn==20.1.0
+# Remove or keep ethereum-tester if you need it. 
+# If keeping it, ensure to use a compatible version.
+# ethereum-tester==0.1.0b3  # Commented out for potential conflict
