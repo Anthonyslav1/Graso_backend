@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query, Form
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query, Form, Header
 # from fastapi_jwt_auth import AuthJWT
 # from fastapi_jwt_auth.exceptions import AuthJWTException
 from middleware.profileUpload import save_profile_picture
@@ -64,8 +64,13 @@ async def create_profile(
     phoneNumber: str = Form(...),
     website: str = Form(...),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db), token: str = ""):
+    db: Session = Depends(get_db),
+    authorization: str = Header(None) ):
     """Create a profile"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization token missing or invalid")
+    
+    token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         current_user = payload["sub"]
@@ -94,8 +99,12 @@ def construct_full_picture_url(picture_path: str, base_url: str) -> str:
     return f"{base_url}{picture_path}"
 
 @app.get('/user-profile/{profile_id}', response_model=Profile)
-def get_profile(profile_id: str, db: Session = Depends(get_db), token: str = ""):
+def get_profile(profile_id: str, db: Session = Depends(get_db), authorization: str = Header(None)):
     """Get a profile"""
+
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization token missing or invalid")
+    token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         current_user = payload["sub"]
@@ -117,8 +126,11 @@ def create_property(
     description: str = Form(...),
     price: str = Form(...),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db), token: str = ""):
-    """Create a profile"""
+    db: Session = Depends(get_db), authorization: str = Header(None) ):
+    """Create a property"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization token missing or invalid")
+    token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         current_user = payload["sub"]
@@ -137,9 +149,12 @@ def create_property(
     new_property = add_property(db, **property_data)
     return new_property
 
-@app.get('/properties', response_model=List[Property])
-def find_properties(db: Session = Depends(get_db), token: str = ""):
+@app.get('/properties', response_model=List[Property],)
+def find_properties(db: Session = Depends(get_db), authorization: str = Header(None) ):
     """Get all properties"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization token missing or invalid")
+    token = authorization.split(" ")[1]
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
