@@ -6,12 +6,12 @@ pydantic==1.10.9
 fastapi-jwt-auth==0.4.0
 python-multipart==0.0.6
 pillow==9.4.0
-web3==3.16.1  # Downgraded to ensure compatibility
+web3==6.6.0  # Updated to the latest version
 aiofiles==0.8.0
 python-dotenv==1.0.0
 requests==2.28.0
-eth-utils==1.10.0  # Downgraded to avoid conflicts
-cytoolz==0.8.2  # Set explicitly to match ethereum-tester
+eth-utils==2.1.0  # Use a version compatible with web3
+cytoolz>=0.10.1  # Allow a range of versions, including the one required by eth-utils
 # Remove or comment out ethereum-tester if not needed
 # ethereum-tester==0.1.0b1
 ens==0.6.1
