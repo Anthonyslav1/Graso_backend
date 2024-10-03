@@ -7,7 +7,7 @@ import time
 upload_dir = "uploads/property"
 os.makedirs(upload_dir, exist_ok=True)
 
-def save_property_picture(file: UploadFile = File(...)):
+async def save_property_picture(file: UploadFile = File(...)):
     """Saves a profile picture"""
     if not file.content_type.startswith('image'):
         raise HTTPException(status_code=400, detail="File must be an image")
@@ -16,7 +16,7 @@ def save_property_picture(file: UploadFile = File(...)):
     file_path = os.path.join(upload_dir, file_name)
 
     try:
-        image = Image.open(io.BytesIO(file.read()))
+        image = Image.open(io.BytesIO(await file.read()))
         image.save(file_path)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -147,7 +147,7 @@ def get_profile(profile_id: str, db: Session = Depends(get_db), authorization: s
     return profile
 
 @app.post('/property', response_model=Property)
-def create_property(
+async def create_property(
     title: str = Form(...),
     description: str = Form(...),
     price: str = Form(...),
@@ -165,7 +165,7 @@ def create_property(
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     # user_id=current_user
-    file_name, file_path = save_property_picture(file)
+    file_name, file_path = await save_property_picture(file)
     property_data = {
         "title": title,
         "description": description,
@@ -175,7 +175,7 @@ def create_property(
     new_property = add_property(db, **property_data)
     return new_property
 
-@app.get('/properties', response_model=List[Property],)
+@app.get('/properties', response_model=List[Property])
 def find_properties(db: Session = Depends(get_db), authorization: str = Header(None) ):
     """Get all properties"""
     if not authorization or not authorization.startswith("Bearer "):

@@ -17,7 +17,7 @@ class Property(Base):
     def __init__(self, **kwargs):
         """Initializes a new Property"""
         super().__init__(**kwargs)
-        self.id = kwargs.get('id', '')
+        self.id = kwargs.get('id', str(uuid.uuid4()))
         self.image = kwargs.get('image', 'default.jpg')
         self.title = kwargs.get('title', '')
         self.description = kwargs.get('description', '')
