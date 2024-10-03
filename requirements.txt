@@ -1,8 +1,7 @@
 fastapi==0.101.0
 uvicorn==0.23.0
 sqlalchemy==1.4.48
-asyncpg==0.25.0        # For asynchronous PostgreSQL support
-psycopg2==2.9.3        # For synchronous PostgreSQL support
+psycopg2-binary==2.9.6
 pydantic==1.10.9
 fastapi-jwt-auth==0.4.0
 python-multipart==0.0.6
