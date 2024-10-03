@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query, Form, Header
+from fastapi.middleware.cors import CORSMiddleware
 # from fastapi_jwt_auth import AuthJWT
 # from fastapi_jwt_auth.exceptions import AuthJWTException
 from middleware.profileUpload import save_profile_picture
@@ -6,15 +7,25 @@ from middleware.propertyUpload import save_property_picture
 from database.db import get_db, generate_nonce, add_profile, find_profile, verify, add_property, get_properties
 from sqlalchemy.orm import Session
 from typing import List
-from .schemas import Nonce, JWTResponse, VerifySignatureRequest, Profile, Property
-# from web3 import Web3
+from .schemas import Nonce, JWTResponse, VerifySignatureRequest, Profile, Property, ProfileResponse
+import uvicorn
 import jwt
 import random
 import string
 from datetime import datetime, timedelta
+from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI()
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
@@ -43,18 +54,21 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 @app.post('/verify_signature', response_model=JWTResponse)
 def verify_signature(request: VerifySignatureRequest, db: Session = Depends(get_db)):
     """Verify a signature"""
+    print(f"Request data: wallet_address={request.wallet_address}, signature={request.signature}, nonce={request.nonce}")
     wallet_address = request.wallet_address.lower()
     signature = request.signature
     nonce = request.nonce
-
+    print(f"Nonce: {nonce}")
+    print(f"Signature: {signature}")
     is_valid = verify(wallet_address, nonce, signature, db)
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid signature or nonce")
     
     access_token = create_access_token(data={"sub": wallet_address})
+    print(access_token)
     return JWTResponse(access_token=access_token)
 
-@app.post('/profile', response_model=Profile)
+@app.post('/profile', response_model=ProfileResponse)
 async def create_profile(
     firstName: str = Form(...),
     lastName: str = Form(...),
@@ -91,12 +105,24 @@ async def create_profile(
         "picture": file_path,
     }
     new_profile = add_profile(db,  **profile_data)
-    return new_profile
+    response = ProfileResponse(
+        id=new_profile.id,
+        firstName=new_profile.firstName,
+        lastName=new_profile.lastName,
+        email=new_profile.email,
+        description=new_profile.description,
+        occupation=new_profile.occupation,
+        phoneNumber=new_profile.phoneNumber,
+        website=new_profile.website,
+        picture=new_profile.picture,
+    )
+    
+    return response
 
 
 def construct_full_picture_url(picture_path: str, base_url: str) -> str:
     """Constructs the full URL for the profile picture."""
-    return f"{base_url}{picture_path}"
+    return f"{base_url}/{picture_path}"
 
 @app.get('/user-profile/{profile_id}', response_model=Profile)
 def get_profile(profile_id: str, db: Session = Depends(get_db), authorization: str = Header(None)):
@@ -169,3 +195,6 @@ def find_properties(db: Session = Depends(get_db), authorization: str = Header(N
     for property in properties:
         property.image = construct_full_picture_url(property.image, base_url)
     return properties
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info", reload=True)

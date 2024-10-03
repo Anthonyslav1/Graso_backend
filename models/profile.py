@@ -16,7 +16,7 @@ class Profile(Base):
     phoneNumber = Column(String(128))
     website = Column(String(128))
     property = relationship('Property', back_populates='profile')
-    nonce = relationship('Nonce', back_populates='profile')
+    # nonce = relationship('Nonce', back_populates='profile')
 
     def __init__(self, **kwargs):
         """Initializes a new Profile"""

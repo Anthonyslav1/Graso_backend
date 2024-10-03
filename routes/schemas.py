@@ -15,6 +15,17 @@ class Profile(BaseModel):
     class Config:
         orm_mode = True
 
+class ProfileResponse(BaseModel):
+    id: str
+    firstName: str
+    lastName: str
+    email: str
+    description: str
+    occupation: str
+    phoneNumber: str
+    website: str
+    picture: str
+
 
 class Property(BaseModel):
     """Property schema"""

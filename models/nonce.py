@@ -9,8 +9,8 @@ class Nonce(Base):
     id = Column(String(128), primary_key=True)
     nonce = Column(String(128))
     wallet_address = Column(String(128))
-    profile_id = Column(String(128), ForeignKey('profiles.id'))
-    profile = relationship('Profile', backref='nonce')
+    # profile_id = Column(String(128), ForeignKey('profiles.id'))
+    # profile = relationship('Profile', backref='nonce')
 
     def __init__(self, **kwargs):
         """Initializes a new Nonce"""
