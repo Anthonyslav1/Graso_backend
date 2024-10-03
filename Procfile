@@ -1,0 +1,1 @@
+web: uvicorn routes.app:app  --reload
