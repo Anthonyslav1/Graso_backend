@@ -156,7 +156,7 @@ def get_profile(db: Session = Depends(get_db), authorization: str = Header(None)
     if not existing_profile:
         raise HTTPException(status_code=404, detail="Profile data not found")
     base_url = "https://web-production-df28.up.railway.app"
-    # existing_profile.picture = construct_full_picture_url(existing_profile.picture, base_url)
+    existing_profile.picture = construct_full_picture_url(existing_profile.picture, base_url)
     return existing_profile
 
 @app.post('/property', response_model=Property)
