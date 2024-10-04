@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # from fastapi_jwt_auth.exceptions import AuthJWTException
 from middleware.profileUpload import save_profile_picture
 from middleware.propertyUpload import save_property_picture
-from database.db import get_db, generate_nonce, add_profile, find_profile, verify, add_property, get_properties
+from database.db import get_db, generate_nonce, add_profile, find_profile, verify, add_property, get_properties, get_wallet,\
+update_nonce_with_profile_id
 from sqlalchemy.orm import Session
 from typing import List
 from .schemas import Nonce, JWTResponse, VerifySignatureRequest, Profile, Property, ProfileResponse
@@ -58,15 +59,20 @@ def verify_signature(request: VerifySignatureRequest, db: Session = Depends(get_
     wallet_address = request.wallet_address.lower()
     signature = request.signature
     nonce = request.nonce
-    print(f"Nonce: {nonce}")
-    print(f"Signature: {signature}")
+
     is_valid = verify(wallet_address, nonce, signature, db)
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid signature or nonce")
-    
-    access_token = create_access_token(data={"sub": wallet_address})
-    print(access_token)
-    return JWTResponse(access_token=access_token)
+    data = get_wallet(db, wallet_address)
+    if data:
+        access_token = create_access_token(data={"sub": wallet_address})
+        return {
+            "access_token": access_token,
+        }
+    else:
+        access_token = create_access_token(data={"sub": wallet_address})
+        print(access_token)
+        return JWTResponse(access_token=access_token)
 
 @app.post('/profile', response_model=ProfileResponse)
 async def create_profile(
@@ -87,7 +93,7 @@ async def create_profile(
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        current_user = payload["sub"]
+        wallet_address = payload["sub"]
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.PyJWTError:   
@@ -105,6 +111,7 @@ async def create_profile(
         "picture": file_path,
     }
     new_profile = add_profile(db,  **profile_data)
+    update_nonce_with_profile_id(wallet_address, new_profile.id, db)
     response = ProfileResponse(
         id=new_profile.id,
         firstName=new_profile.firstName,
@@ -124,8 +131,8 @@ def construct_full_picture_url(picture_path: str, base_url: str) -> str:
     """Constructs the full URL for the profile picture."""
     return f"{base_url}/{picture_path}"
 
-@app.get('/user-profile/{profile_id}', response_model=Profile)
-def get_profile(profile_id: str, db: Session = Depends(get_db), authorization: str = Header(None)):
+@app.get('/user-profile', response_model=Profile)
+def get_profile(db: Session = Depends(get_db), authorization: str = Header(None)):
     """Get a profile"""
 
     if not authorization or not authorization.startswith("Bearer "):
@@ -133,18 +140,24 @@ def get_profile(profile_id: str, db: Session = Depends(get_db), authorization: s
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        current_user = payload["sub"]
+        wallet_address = payload["sub"]
+        print("Wallet address from token:", wallet_address)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    profile = find_profile(db, profile_id)
-    if not profile:
+    my_profile = get_wallet(db, wallet_address)
+    print(f"Querying wallet: {wallet_address}, Result: {my_profile}")
+    if not my_profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-    base_url = "http://localhost:8000"
-    profile.picture = construct_full_picture_url(profile.picture, base_url)
-    return profile
+    existing_profile = my_profile.profile
+    print(f"Retrieved profile: {existing_profile}")
+    if not existing_profile:
+        raise HTTPException(status_code=404, detail="Profile data not found")
+    base_url = "https://web-production-df28.up.railway.app"
+    # existing_profile.picture = construct_full_picture_url(existing_profile.picture, base_url)
+    return existing_profile
 
 @app.post('/property', response_model=Property)
 async def create_property(
@@ -159,7 +172,7 @@ async def create_property(
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        current_user = payload["sub"]
+        wallet_address = payload["sub"]
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.PyJWTError:
@@ -191,10 +204,10 @@ def find_properties(db: Session = Depends(get_db), authorization: str = Header(N
         raise HTTPException(status_code=401, detail="Invalid token")
     
     properties = get_properties(db)
-    base_url = "http://localhost:8000"
+    base_url = "https://web-production-df28.up.railway.app"
     for property in properties:
         property.image = construct_full_picture_url(property.image, base_url)
     return properties
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info", reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=5000, log_level="info", reload=True)

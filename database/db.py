@@ -8,7 +8,7 @@ from eth_account.messages import encode_defunct
 from models import Base
 
 web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
-DATABASE_URL = "postgresql://graso_database_user:I88VUodWqyvqK1EQwVRTFZfTaxDc8xix@dpg-crv6rqe8ii6s738mg1h0-a.oregon-postgres.render.com/graso_database"
+DATABASE_URL = "postgresql://graso_database_gmxe_user:2ZbahHYc4Zv0GG9I1HD5Oou3bzfqZ2eo@dpg-crvqigbtq21c738ov4kg-a.oregon-postgres.render.com/graso_database_gmxe"
 
 
 engine = create_engine(DATABASE_URL)
@@ -35,6 +35,13 @@ def find_profile(db, id):
     """Finds a profile in the database"""
     return db.query(Profile).filter(Profile.id == id).first()
 
+def get_wallet(db, wallet):
+    """Returns a users wallet"""
+    wallet_address = web3.to_checksum_address(wallet)
+    chk_wallet = db.query(Nonce).filter(Nonce.wallet_address==wallet_address).first()
+    print(f'Checking wallet in datbase: {chk_wallet}')
+    return chk_wallet
+
 def add_property(db, **kwargs: dict):
     """Adds a new property to the database"""
     property = Property(**kwargs)
@@ -52,16 +59,30 @@ def get_properties(db):
 
 def generate_nonce(wallet_address: str, nonce: str, db):
     """Generates a nonce"""
+    wallet_address = web3.to_checksum_address(wallet_address)
     save_nonce = db.query(Nonce).filter(Nonce.wallet_address == wallet_address).first()
     if save_nonce:
         print(f"Nonce already exists for wallet: {wallet_address}, Nonce: {save_nonce.nonce}")
         return save_nonce
     save_nonce = Nonce(wallet_address=wallet_address, nonce=nonce)
-    print(save_nonce)
+    print(f"Saving nonce for wallet: {wallet_address}, Nonce: {nonce}")
     db.add(save_nonce)
     db.commit()
     print(f"Generated and saved nonce for wallet: {wallet_address}, Nonce: {nonce}")
+    print(save_nonce)
     return save_nonce
+
+def update_nonce_with_profile_id(wallet_address: str, profile_id: str, db):
+    """Updates the nonce with the profile ID."""
+    wallet_address = web3.to_checksum_address(wallet_address)
+    existing_nonce = db.query(Nonce).filter(Nonce.wallet_address == wallet_address).first()
+    if existing_nonce:
+        existing_nonce.profile_id = profile_id  # Set the profile ID
+        db.commit()
+        print(f"Updated nonce for wallet: {wallet_address} with profile ID: {profile_id}")
+        return existing_nonce
+    else:
+        raise ValueError("Nonce not found for the given wallet address.")
 
 def verify(wallet_address: str, nonce: str, signature: str, db):
     """Verifies a signature"""

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 import uuid
 from . import Base
@@ -15,8 +15,8 @@ class Profile(Base):
     picture = Column(String(128), default='default.jpg')
     phoneNumber = Column(String(128))
     website = Column(String(128))
+    nonce = relationship('Nonce', back_populates='profile', uselist=False)
     property = relationship('Property', back_populates='profile')
-    # nonce = relationship('Nonce', back_populates='profile')
 
     def __init__(self, **kwargs):
         """Initializes a new Profile"""

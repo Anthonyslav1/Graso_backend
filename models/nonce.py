@@ -8,9 +8,9 @@ class Nonce(Base):
     __tablename__ = 'nonces'
     id = Column(String(128), primary_key=True)
     nonce = Column(String(128))
-    wallet_address = Column(String(128))
-    # profile_id = Column(String(128), ForeignKey('profiles.id'))
-    # profile = relationship('Profile', backref='nonce')
+    wallet_address = Column(String(128), unique=True)
+    profile_id = Column(String(128), ForeignKey('profiles.id'))
+    profile = relationship('Profile', back_populates='nonce') 
 
     def __init__(self, **kwargs):
         """Initializes a new Nonce"""
@@ -18,3 +18,4 @@ class Nonce(Base):
         self.id = str(uuid.uuid4())
         self.nonce = kwargs.get('nonce', '')
         self.wallet_address = kwargs.get('wallet_address', '')
+        self.profile_id = kwargs.get('profile_id', None)
