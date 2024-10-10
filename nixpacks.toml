@@ -1,10 +1,7 @@
-# nixpacks.toml
-
-[phases.setup]
-nixpkgs = ["rustc", "cargo", "build-essential"] # Install Rust toolchain and necessary build tools
-
 [phases.build]
 commands = [
-  "pip install -r requirements.txt",  # Install Python dependencies
-  "maturin develop"                    # Build Rust extensions (if any)
+  "curl https://sh.rustup.rs -sSf | sh -s -- -y",   # Install Rust using rustup
+  "source $HOME/.cargo/env",                        # Load Rust environment
+  "pip install -r requirements.txt",                # Install Python dependencies
+  "maturin develop"                                 # Build Rust extension
 ]
