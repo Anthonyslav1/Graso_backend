@@ -37,10 +37,10 @@ def find_profile(db, id):
     """Finds a profile in the database"""
     return db.query(Profile).filter(Profile.id == id).first()
 
-def get_wallet(db, wallet):
+def get_wallet(db, wallet: str):
     """Returns a users wallet"""
-    # wallet_address = web3.to_checksum_address(wallet)
-    chk_wallet = db.query(Nonce).filter(Nonce.wallet_address==wallet).first()
+    wallet_address = wallet.lower()
+    chk_wallet = db.query(Nonce).filter(Nonce.wallet_address==wallet_address).first()
     print(f'Checking wallet in datbase: {chk_wallet}')
     return chk_wallet
 
@@ -61,7 +61,7 @@ def get_properties(db):
 
 def generate_nonce(wallet_address: str, nonce: str, db):
     """Generates a nonce"""
-    # wallet_address = web3.to_checksum_address(wallet_address)
+    wallet_address = wallet_address.lower()
     save_nonce = db.query(Nonce).filter(Nonce.wallet_address == wallet_address).first()
     if save_nonce:
         print(f"Nonce already exists for wallet: {wallet_address}, Nonce: {save_nonce.nonce}")
@@ -76,7 +76,7 @@ def generate_nonce(wallet_address: str, nonce: str, db):
 
 def update_nonce_with_profile_id(wallet_address: str, profile_id: str, db):
     """Updates the nonce with the profile ID."""
-    # wallet_address = web3.to_checksum_address(wallet_address)
+    wallet_address = wallet_address.lower()
     existing_nonce = db.query(Nonce).filter(Nonce.wallet_address == wallet_address).first()
     if existing_nonce:
         existing_nonce.profile_id = profile_id  # Set the profile ID
@@ -88,7 +88,7 @@ def update_nonce_with_profile_id(wallet_address: str, profile_id: str, db):
 
 def verify(wallet_address: str, nonce: str, signature: str, db):
     """Verifies a signature"""
-    # wallet_address = web3.to_checksum_address(wallet_address)
+    wallet_address = wallet_address.lower()
     save_nonce = db.query(Nonce).filter(Nonce.wallet_address == wallet_address).first()
     if not save_nonce:
         print("No nonce found for wallet:", wallet_address)
