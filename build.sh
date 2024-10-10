@@ -40,6 +40,7 @@ pip3 install gunicorn==20.1.0
 pip3 install pysui==0.70.0
 pip3 install maturin
 
+gunicorn --version
 # Confirm the installations
 pip3 freeze
 

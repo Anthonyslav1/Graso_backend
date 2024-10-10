@@ -164,7 +164,7 @@ def get_profile(db: Session = Depends(get_db), authorization: str = Header(None)
     print(f"Retrieved profile: {existing_profile}")
     if not existing_profile:
         raise HTTPException(status_code=404, detail="Profile data not found")
-    base_url = "https://web-production-df28.up.railway.app"
+    base_url = "https://web-production-6417.up.railway.app"
     existing_profile.picture = construct_full_picture_url(existing_profile.picture, base_url)
     return existing_profile
 
@@ -213,7 +213,7 @@ def find_properties(db: Session = Depends(get_db), authorization: str = Header(N
         raise HTTPException(status_code=401, detail="Invalid token")
     
     properties = get_properties(db)
-    base_url = "https://web-production-df28.up.railway.app"
+    base_url = "https://web-production-6417.up.railway.app"
     for property in properties:
         property.image = construct_full_picture_url(property.image, base_url)
     return properties
