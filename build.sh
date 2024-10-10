@@ -37,7 +37,7 @@ pip3 install python-dotenv==1.0.0
 pip3 install requests==2.28.1
 pip3 install 'eth-utils>=2.1.0'
 pip3 install gunicorn==20.1.0
-pip3 install pysui==0.70.0
+pip3 install pysui
 pip3 install maturin
 
 gunicorn --version
