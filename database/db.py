@@ -4,15 +4,17 @@ from models.profile import Profile
 from models.property import Property
 from models.nonce import Nonce
 from web3 import Web3
-from eth_account.messages import encode_defunct
+# from eth_account.messages import encode_defunct
+# from sui_python_sdk.provider import SuiJsonRpcProvider
+from pysui.sui.sui_crypto import SuiKeyPair
 from models import Base
 
 web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
-DATABASE_URL = "postgresql://graso_database_gmxe_user:2ZbahHYc4Zv0GG9I1HD5Oou3bzfqZ2eo@dpg-crvqigbtq21c738ov4kg-a.oregon-postgres.render.com/graso_database_gmxe"
+DATABASE_URL = "postgresql://graso_database_f6l6_user:ngzcr3JOhqBA22YQv16YbLJH3iL6zSAu@dpg-cs3egb3tq21c73eh5fs0-a.oregon-postgres.render.com/graso_database_f6l6"
 
 
 engine = create_engine(DATABASE_URL)
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine, checkfirst=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
@@ -94,8 +96,13 @@ def verify(wallet_address: str, nonce: str, signature: str, db):
     if save_nonce.nonce != nonce:
         print("Nonce mismatch. Saved:", save_nonce.nonce, "Received:", nonce)
         return False
+    try:
+        message = SuiKeyPair.sign_message(nonce.encode())  # Nonce needs to be encoded before verification
+        if not SuiKeyPair.verify_signature(signature, message):
+            raise Exception(status_code=400, detail="Signature verification failed")
+    except Exception as e:
+        raise Exception(status_code=400, detail=f"Error during verification: {str(e)}")
+    # message_hash = encode_defunct(text=nonce)
+    # recovered_address = web3.eth.account.recover_message(message_hash, signature=signature)
 
-    message_hash = encode_defunct(text=nonce)
-    recovered_address = web3.eth.account.recover_message(message_hash, signature=signature)
-
-    return web3.to_checksum_address(recovered_address) == web3.to_checksum_address(wallet_address)
+    # return web3.to_checksum_address(recovered_address) == web3.to_checksum_address(wallet_address)

@@ -1,10 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query, Form, Header
 from fastapi.middleware.cors import CORSMiddleware
-# from fastapi_jwt_auth import AuthJWT
-# from fastapi_jwt_auth.exceptions import AuthJWTException
 from middleware.profileUpload import save_profile_picture
 from middleware.propertyUpload import save_property_picture
-from database.db import get_db, generate_nonce, add_profile, find_profile, verify, add_property, get_properties, get_wallet,\
+from database.db import get_db, generate_nonce, add_profile, verify, add_property, get_properties, get_wallet,\
 update_nonce_with_profile_id
 from sqlalchemy.orm import Session
 from typing import List
@@ -15,7 +13,8 @@ import random
 import string
 from datetime import datetime, timedelta
 from fastapi.staticfiles import StaticFiles
-
+from pysui.sui.sui_crypto import SuiKeyPair, PublicKey
+import secrets
 
 app = FastAPI()
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
@@ -34,12 +33,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 def get_nonce():
     """Generate a nonce"""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+    nonce = secrets.token_bytes(32).hex()
+    return nonce
 
 @app.post('/generate_nonce', response_model=Nonce)
 def nonce(wallet_address: str = Query(...), db: Session = Depends(get_db)):
     """Generate a nonce"""
     nonce = get_nonce()
+    wallet_address = wallet_address.lower()
+    # Ensure the wallet address is in Sui's format
+    if not wallet_address.startswith("0x"):
+        raise HTTPException(status_code=400, detail="Invalid Sui wallet address format.")
     return generate_nonce(wallet_address, nonce, db)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -60,9 +64,14 @@ def verify_signature(request: VerifySignatureRequest, db: Session = Depends(get_
     signature = request.signature
     nonce = request.nonce
 
+    print(f"Wallet Address: {wallet_address}")
+    print(f"Nonce: {nonce}")
+    print(f"Signature: {signature}")
+    
     is_valid = verify(wallet_address, nonce, signature, db)
     if not is_valid:
         raise HTTPException(status_code=400, detail="Invalid signature or nonce")
+    
     data = get_wallet(db, wallet_address)
     if data:
         access_token = create_access_token(data={"sub": wallet_address})
