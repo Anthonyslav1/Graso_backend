@@ -22,6 +22,8 @@ source $HOME/.cargo/env
 rustc --version
 cargo --version
 
+export PYTHONPATH=$(python3 -c 'import site; print(site.getsitepackages()[0])')
+
 # Install Python dependencies
 pip3 install fastapi==0.101.0
 pip3 install uvicorn==0.23.0
@@ -37,9 +39,10 @@ pip3 install python-dotenv==1.0.0
 pip3 install requests==2.28.1
 pip3 install 'eth-utils>=2.1.0'
 pip3 install gunicorn==20.1.0
-pip3 install pysui
+pip3 install --force-reinstall pysui
 pip3 install maturin
 
 gunicorn --version
 # Confirm the installations
+python3 -c "import pysui" && echo "pysui is available" || echo "pysui not found"
 pip3 freeze
