@@ -43,5 +43,3 @@ pip3 install maturin
 gunicorn --version
 # Confirm the installations
 pip3 freeze
-
-gunicorn -w 2 -k uvicorn.workers.UvicornWorker routes.app:app
